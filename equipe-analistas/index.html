@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic BackOffice — Uma operação inteligente, orquestrada por agentes de IA e supervisionada estrategicamente por pessoas</title>
+<style>
+:root {
+  --font-family: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --cores-azul-50:  #F0F2FA;
+  --cores-azul-100: #DBEAFE;
+  --cores-azul-200: #BEDBFF;
+  --cores-azul-300: #8EC5FF;
+  --cores-azul-400: #51A2FF;
+  --cores-azul-600: #0055FF;
+  --cores-azul-800: #193CB8;
+  --cores-cinza-100: #E6E7EA;
+  --cores-cinza-300: #B5B7C1;
+  --cores-cinza-400: #9C9FAD;
+  --cores-cinza-600: #6B6E84;
+  --cores-base-white: #FFFFFF;
+  --cores-base-black: #080E32;
+  --cores-base-salmon: #FC6058;
+  --primary: var(--cores-azul-600);
+  --primary-foreground: var(--cores-base-white);
+  --background: var(--cores-base-white);
+  --foreground: var(--cores-base-black);
+  --muted-foreground: var(--cores-cinza-600);
+  --border: var(--cores-cinza-100);
+  --elevation-sm: 0 1px 2px rgba(0,0,0,0.20), 0 0.1px 0.3px rgba(0,0,0,0.10);
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+  --letter-spacing-default: 0.02em;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: var(--font-family);
+  color: var(--foreground);
+  background: var(--cores-base-black);
+  letter-spacing: var(--letter-spacing-default);
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  overflow: hidden;
+}
+.slide {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; justify-content: center;
+  padding: 6vh 8vw 10vh; background: var(--background);
+}
+.slide.active { display: flex; }
+.slide.dense { justify-content: flex-start; padding-top: 5vh; }
+.slide.navy { background: var(--cores-base-black); color: var(--cores-base-white); }
+
+.kicker { font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary); margin-bottom: 20px; }
+.navy .kicker { color: var(--cores-azul-400); }
+h1 { font-size: clamp(40px, 5.5vw, 72px); font-weight: 700; line-height: 1.08; }
+h2 { font-size: clamp(26px, 3vw, 40px); font-weight: 700; line-height: 1.15; text-wrap: balance; }
+.lead { font-size: clamp(16px, 1.5vw, 20px); font-weight: 500; line-height: 1.45; color: var(--muted-foreground); margin-top: 16px; max-width: 980px; }
+.navy .lead { color: var(--cores-cinza-300); }
+.big-question { font-size: clamp(32px, 4vw, 56px); font-weight: 700; line-height: 1.15; max-width: 1100px; }
+.accent-bar { width: 64px; height: 4px; background: var(--primary); border-radius: 2px; margin-bottom: 24px; }
+.navy .accent-bar { background: var(--cores-azul-400); }
+
+.card { background: var(--cores-base-white); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--elevation-sm); padding: 22px 24px; }
+.card.highlight { border: 2px solid var(--primary); }
+.card h4 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.card p, .card li { font-size: 16px; line-height: 1.5; color: var(--muted-foreground); }
+.card ul { list-style: none; }
+.card li { padding: 6px 0; border-top: 1px solid var(--border); }
+.card li:first-child { border-top: none; }
+.card li strong, .card p strong { color: var(--foreground); }
+
+.row { display: flex; gap: 20px; margin-top: 24px; }
+.row > * { flex: 1; }
+.col-2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; margin-top: 20px; align-items: start; }
+
+.stat-pair { display: flex; align-items: baseline; gap: 28px; margin-top: 28px; }
+.stat-pair .value { font-size: clamp(56px, 7vw, 104px); font-weight: 700; line-height: 1; }
+.stat-pair .value.old { color: var(--cores-cinza-300); }
+.stat-pair .value.new { color: var(--primary); }
+.stat-pair .arrow { font-size: 36px; color: var(--cores-cinza-400); }
+.stat-pair .label { font-size: 14px; color: var(--muted-foreground); margin-top: 8px; }
+
+table.t { width: 100%; border-collapse: collapse; margin-top: 18px; }
+.t th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground); padding: 0 10px 8px 0; border-bottom: 1px solid var(--cores-cinza-300); }
+.t td { font-size: 16px; line-height: 1.4; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--muted-foreground); }
+.t td:first-child { color: var(--foreground); font-weight: 700; white-space: nowrap; }
+.t.compact td { font-size: 15px; padding: 6px 10px 6px 0; }
+.t code, code { font-family: 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.92em; color: var(--foreground); }
+
+.pill { display: inline-block; border-radius: var(--radius-full); padding: 3px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.p-sombra { background: var(--cores-azul-50); color: var(--primary); }
+.p-teste { background: var(--cores-azul-100); color: var(--cores-azul-800); }
+.p-real { background: var(--primary); color: var(--primary-foreground); }
+.p-nao { background: var(--cores-cinza-100); color: var(--cores-cinza-600); }
+.p-alerta { background: var(--cores-base-white); color: var(--cores-base-salmon); border: 1px solid var(--cores-base-salmon); }
+
+/* organograma */
+.org { margin-top: 20px; display: flex; flex-direction: column; gap: 14px; }
+.org-top { align-self: flex-start; min-width: 46%; }
+.org-mid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.org-mid .chip { font-size: 13px; padding: 3px 10px; }
+.org-role { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 6px; }
+.org-sub { font-size: 15px; color: var(--muted-foreground); line-height: 1.45; margin-bottom: 10px; }
+.org-pods { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-block; border: 1px solid var(--cores-cinza-300); border-radius: var(--radius-full); padding: 4px 12px; font-size: 14px; font-weight: 500; color: var(--foreground); }
+.chip b { color: var(--primary); }
+.chip.dim { color: var(--muted-foreground); border-style: dashed; }
+.org-line { font-size: 12px; color: var(--cores-cinza-400); text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* fluxo */
+.flow { display: flex; align-items: stretch; gap: 10px; margin-top: 24px; }
+.flow .step { flex: 1; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 16px 16px; box-shadow: var(--elevation-sm); background: var(--cores-base-white); }
+.flow .step.highlight { border: 2px solid var(--primary); }
+.flow .step .n { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.flow .step h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.flow .step p { font-size: 15px; line-height: 1.45; color: var(--muted-foreground); }
+.flow .sep { align-self: center; color: var(--cores-cinza-400); font-size: 20px; }
+
+.final-list { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 36px; max-width: 1200px; }
+.final-item { display: flex; gap: 14px; align-items: baseline; }
+.final-item .num { flex: 0 0 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); background: var(--cores-azul-800); color: var(--cores-base-white); font-size: 14px; font-weight: 700; }
+.final-item p { font-size: clamp(17px, 1.5vw, 20px); font-weight: 400; line-height: 1.45; color: var(--muted-foreground); }
+.final-item p strong { color: var(--foreground); }
+
+.diverg { margin-top: 14px; font-size: 13px; line-height: 1.45; color: var(--muted-foreground); border: 1px dashed var(--cores-base-salmon); border-radius: var(--radius-lg); padding: 10px 14px; max-width: 1100px; }
+.diverg strong { color: var(--cores-base-salmon); font-weight: 700; }
+
+.footer-mark { position: absolute; bottom: 4.5vh; left: 8vw; right: 16vw; font-size: 11px; font-weight: 500; color: var(--cores-cinza-400); letter-spacing: 0.04em; line-height: 1.4; }
+.navy .footer-mark { color: var(--cores-cinza-400); }
+.counter { position: fixed; bottom: 4.5vh; right: 8vw; font-size: 13px; font-weight: 500; color: var(--cores-cinza-400); z-index: 20; }
+.draft { position: fixed; top: 2.4vh; right: 2vw; z-index: 20; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cores-base-salmon); border: 1px solid var(--cores-base-salmon); border-radius: var(--radius-full); padding: 4px 12px; background: var(--cores-base-white); }
+.hint { position: fixed; top: 2.4vh; left: 8vw; font-size: 12px; color: var(--cores-cinza-400); z-index: 10; transition: opacity 1s; }
+
+.notes { display: none; }
+#notes-panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 34vh; overflow: auto; z-index: 30; background: var(--cores-base-black); color: var(--cores-cinza-100); border-top: 1px solid var(--cores-azul-800); padding: 16px 8vw 20px; font-size: 15px; line-height: 1.55; display: none; }
+#notes-panel.open { display: block; }
+#notes-panel .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--cores-azul-400); margin-bottom: 8px; }
+#notes-panel p + p { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA -->
+<section class="slide navy active">
+  <div class="kicker">Equipe de analistas · 23/11/2026</div>
+  <h1>Agentic BackOffice</h1>
+  <p class="lead">Uma operação inteligente, orquestrada por agentes de IA e supervisionada estrategicamente por pessoas.</p>
+  <p class="lead" style="color: var(--cores-base-white); font-weight: 700; margin-top: 40px;">Pessoas decidem. Agentes executam.</p>
+  <div class="footer-mark">BackOffice Franquias · pedido da COO em 16/11/2026 · pitch publicado em 19/11/2026</div>
+  <div class="notes">
+    <p>Versão para quem opera os pods a partir de terça. Desenho pods-v3 (21/11), com as decisões de Danos de 22/11.</p>
+    <p>Objetivo: cada analista sair sabendo quais agentes são do seu pod, o que decide e o que sobe à Supervisora.</p>
+  </div>
+</section>
+
+<!-- 2 · O QUE MUDA -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>Menos agentes. Cada um cuida de um processo inteiro.</h2>
+  <div class="col-2">
+    <div class="stat-pair">
+      <div><div class="value old">124</div><div class="label">agentes no desenho v2 (17/11)</div></div>
+      <div class="arrow">→</div>
+      <div><div class="value new">30</div><div class="label">agentes no pods-v3 (21/11)</div></div>
+    </div>
+    <div class="card">
+      <h4>O que muda no dia de vocês</h4>
+      <ul>
+        <li><strong>O agente faz o processo</strong> e propõe o que não pode decidir.</li>
+        <li><strong>Só a exceção chega a você,</strong> com rascunho e evidência.</li>
+        <li><strong>Agente parado vira card</strong> (Sentinela).</li>
+        <li><strong>Conta de serviço,</strong> não login pessoal.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-mark">Fonte: pods-v3.json (21/11/2026, atualizado 22/11) · insumos das sessões v3 (21/11/2026)</div>
+  <div class="notes">
+    <p>No v2 cada função virava um agente. No v3 um agente é um processo de ponta a ponta: 6 na central e 24 nos pods.</p>
+    <p>Reclame Aqui fica fora: agente da Diretoria, entrada prevista para 25/11.</p>
+  </div>
+</section>
+
+<!-- 3 · ORGANOGRAMA -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>Quem cuida de quê</h2>
+  <div class="org">
+    <div class="card org-top highlight">
+      <div class="org-role">Supervisora</div>
+      <div class="org-sub" style="margin-bottom:0;">Não opera a fila dos pods. Decide exceções, assina e libera os agentes.</div>
+    </div>
+    <div class="org-mid">
+      <div class="card">
+        <div class="org-role">Pod Fornecedores · 5 agentes</div>
+        <div class="org-sub">Analista do pod Fornecedores</div>
+        <div class="org-pods"><span class="chip">Prestadores</span><span class="chip">Pedidos</span><span class="chip">Recompra de enxoval</span><span class="chip">Fechamentos</span><span class="chip">KPIs setor 35</span></div>
+      </div>
+      <div class="card">
+        <div class="org-role">Pod Manutenção · 4 agentes</div>
+        <div class="org-sub">Analista do pod Manutenção</div>
+        <div class="org-pods"><span class="chip">Entradas e urgente</span><span class="chip">Corretiva</span><span class="chip">Recorrente</span><span class="chip">KPIs, Central e relator</span></div>
+      </div>
+      <div class="card">
+        <div class="org-role">Pod Reputação · 2 agentes</div>
+        <div class="org-sub">Analista do pod Reputação</div>
+        <div class="org-pods"><span class="chip">Avaliações</span><span class="chip">Pedido de avaliação e KPIs de comentários</span></div>
+      </div>
+      <div class="card">
+        <div class="org-role">Pod Conformidade · 5 agentes</div>
+        <div class="org-sub">Analista do pod Conformidade</div>
+        <div class="org-pods"><span class="chip">Ocorrências</span><span class="chip">Multas</span><span class="chip">Score, Stop e UTI</span><span class="chip">Polígono e área de atuação</span><span class="chip">Atendimento SIA Qualidade</span></div>
+      </div>
+      <div class="card">
+        <div class="org-role">Pod Danos · 3 agentes</div>
+        <div class="org-sub">Analista do pod Danos</div>
+        <div class="org-pods"><span class="chip">Prazo e lançamento de danos</span><span class="chip">AirCover, OTA e EasyCover</span><span class="chip">Cobrança, jurídico e finalização</span></div>
+      </div>
+      <div class="card">
+        <div class="org-role">Pod Contas · 5 agentes</div>
+        <div class="org-sub">Analista do pod Contas</div>
+        <div class="org-pods"><span class="chip">Despesas</span><span class="chip">Repasse, ajustes, BO e NF</span><span class="chip">Taxa de limpeza</span><span class="chip">Contratos, distrato, migração e cadastro</span><span class="chip">Comissão das franquias e taxa de aquisição</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-mark">Fonte: pods-v3.json (21/11/2026, atualizado 22/11) · número = agentes do v3 em cada pod · 24 nos pods + 6 na central = 30</div>
+  <div class="notes">
+    <p>Os pods Fornecedores e Manutenção dividem o trabalho: o analista de Fornecedores fica com o lado do fornecedor nos dois; o de Manutenção, com os casos de franquia e proprietário. Os dois se cobrem no plantão.</p>
+    <p>Quatro pods com um analista só: decisão mantida pela Ray em 21/11; o volume será medido nas duas primeiras semanas.</p>
+  </div>
+</section>
+
+<!-- 4 · CENTRAL -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>A central: 6 agentes que servem todos os pods</h2>
+  <table class="t">
+    <thead><tr><th>Agente</th><th>O que faz</th><th>Estado em 23/11</th></tr></thead>
+    <tbody>
+      <tr><td>Orquestradora</td><td>Recebe a demanda, manda ao agente dono e monta o "Precisa de você"</td><td>Roda na VPS pessoal da Ray</td></tr>
+      <tr><td>Sentinela</td><td>Avisa quando um agente falha ou fica em silêncio</td><td><span class="pill p-sombra">sombra</span> viva na VPS do time</td></tr>
+      <tr><td>Conferente central</td><td>Confere toda saída contra a régua MGO e a fonte</td><td><span class="pill p-nao">não instalado</span></td></tr>
+      <tr><td>Comunicador central</td><td>Única porta para fora</td><td><span class="pill p-nao">não instalado</span></td></tr>
+      <tr><td>Dev</td><td>Constrói e corrige agentes sob demanda</td><td>Sobe melhorias às 17h</td></tr>
+      <tr><td>KPIs D-1 e monitor</td><td>Lança KPIs e caça buraco de KPI/SLA</td><td><span class="pill p-nao">não instalado</span></td></tr>
+    </tbody>
+  </table>
+  <div class="footer-mark">Fontes: pods-v3.json (21/11/2026, atualizado 22/11) · agenda da VPS do time, 23/11/2026</div>
+  <div class="notes">
+    <p>Para vocês importam a Orquestradora, que monta a fila, e a Sentinela, que avisa quando um agente para.</p>
+    <p>Sem Conferente e Comunicador instalados, nada sai para fora sem ordem da Ray.</p>
+  </div>
+</section>
+
+<!-- 5 · QUEM DECIDE (1/2) -->
+<section class="slide dense">
+  <div class="accent-bar"></div>
+  <h2>Quem decide em cada pod (1/2)</h2>
+  <table class="t compact">
+    <thead><tr><th>Pod</th><th>Agentes</th><th>Analista do pod decide</th><th>Supervisora decide</th></tr></thead>
+    <tbody>
+      <tr><td>Fornecedores</td><td>Prestadores · Pedidos · Recompra de enxoval · Fechamentos · KPIs setor 35</td><td>Homologação e SLA do fornecedor<br>Fechamento de comissão e EasyCover<br>Templates de mensagem</td><td>Contrato ou aditivo de fornecedor<br>Valor acima da tabela<br>Campanha com compra mínima</td></tr>
+      <tr><td>Manutenção</td><td>Entradas e urgente · Corretiva · Recorrente · KPIs, Central e relator</td><td>Conserto acima de R$ 300 sem OK do proprietário<br>Card sem evidência e contestação<br>Fraude a conferir</td><td>Ciclo recorrente e janela 01/12–31/03<br>Franquia com 20+ cards abertos<br>Fraude confirmada</td></tr>
+      <tr><td>Reputação</td><td>Avaliações · Pedido de avaliação e KPIs de comentários</td><td>Resposta pública sensível<br>Contestação negada 2 vezes<br>Plano com nota abaixo de 4,80</td><td>Comunicação pública ou em massa<br>Mudança de régua</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="font-size: 15px;">Em todo pod a Supervisora também decide: liberação de agente, mudança de régua e caso entre pods.</p>
+  <div class="footer-mark">Fonte: pods-v3.json (21/11/2026, atualizado 22/11), humanos_pods e bloco supervisora</div>
+  <div class="notes">
+    <p>O analista do pod decide a exceção e sobe à Supervisora só o que está na última coluna, sempre com parecer.</p>
+    <p>Manutenção: o lado do fornecedor fica com o analista de Fornecedores.</p>
+  </div>
+</section>
+
+<!-- 6 · QUEM DECIDE (2/2) -->
+<section class="slide dense">
+  <div class="accent-bar"></div>
+  <h2>Quem decide em cada pod (2/2)</h2>
+  <table class="t compact">
+    <thead><tr><th>Pod</th><th>Agentes</th><th>Analista do pod decide</th><th>Supervisora decide</th></tr></thead>
+    <tbody>
+      <tr><td>Conformidade</td><td>Ocorrências · Multas · Score, Stop e UTI · Atendimento SIA Qualidade · Polígono</td><td>Valida toda multa<br>1ª validação da gravíssima<br>Entrada e alta da UTI<br>Stop fora de master/top 10</td><td>Gravíssima (2ª validação) e má-fé<br>Multa, UTI ou Stop de master/top 10</td></tr>
+      <tr><td>Danos</td><td>Prazo e lançamento · AirCover, OTA e EasyCover · Cobrança, jurídico e finalização</td><td>Dano de R$ 1.000 a R$ 2.500<br>Evidência suspeita<br>1ª semana: todo dano acima de R$ 300</td><td>Dano acima de R$ 2.500<br>Ação judicial</td></tr>
+      <tr><td>Contas</td><td>Despesas · Repasse, ajustes, BO e NF · Taxa de limpeza · Contratos, distrato e migração · Comissão e taxa de aquisição</td><td>Lote de taxa de limpeza sem aumento<br>Pré-OK do repasse no dia 9</td><td>OK do repasse no dia 10<br>Distrato e taxa acima da Calculadora<br>Assinaturas no Clicksign</td></tr>
+    </tbody>
+  </table>
+  <div class="footer-mark">Fonte: pods-v3.json (21/11/2026, atualizado 22/11), humanos_pods, pods[] e bloco supervisora</div>
+  <div class="notes">
+    <p>Os três pods são do mesmo analista, junto com Reputação. Ele zera a fila entre 08h30 e 09h para a Supervisora encontrar só o que é dela.</p>
+    <p>Danos: R$ 1.000 é teto provisório até a decisão do teto de valor.</p>
+  </div>
+</section>
+
+<!-- 7 · COMO O TRABALHO CHEGA -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>Como o trabalho chega até você</h2>
+  <div class="flow">
+    <div class="step"><div class="n">1 · Entrada</div><h4>Demanda</h4><p>Slack, Taskdex, e-mail ou outro agente.</p></div>
+    <div class="sep">→</div>
+    <div class="step"><div class="n">2 · Orquestradora</div><h4>Roteia</h4><p>Manda ao agente dono do processo.</p></div>
+    <div class="sep">→</div>
+    <div class="step"><div class="n">3 · Agente</div><h4>Faz o processo</h4><p>O que não pode decidir, propõe.</p></div>
+    <div class="sep">→</div>
+    <div class="step highlight"><div class="n">4 · Precisa de você</div><h4>Card na sua fila</h4><p>Com rascunho, evidência e opção recomendada.</p></div>
+    <div class="sep">→</div>
+    <div class="step"><div class="n">5 · Supervisora</div><h4>Se passar do pod</h4><p>Com o seu parecer.</p></div>
+  </div>
+  <p class="lead" style="color: var(--foreground);"><strong>Sombra:</strong> o agente lê dado real e só propõe; nada é enviado. Libera com 24h revisadas pelo analista do pod e OK da Supervisora.</p>
+  <div class="footer-mark">Fonte: pods-v3.json (21/11/2026, atualizado 22/11), central-orquestradora e sombra</div>
+  <div class="notes">
+    <p>O card chega pronto. O analista decide e não refaz o trabalho.</p>
+    <p>A correção é feita no <code>/trabalho-em-dupla</code>, com o seu usuário na VPS, e entra na janela das 17h.</p>
+  </div>
+</section>
+
+<!-- 8 · ESTADO DOS PODS -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>Onde cada pod está hoje (23/11)</h2>
+  <table class="t">
+    <thead><tr><th>Pod</th><th>Instalados</th><th>Estado</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>Conformidade</td><td>5 / 5</td><td><span class="pill p-sombra">sombra</span></td><td>Multas sem Nekt e ScorePulse</td></tr>
+      <tr><td>Danos</td><td>3 / 3</td><td><span class="pill p-sombra">sombra</span></td><td>Timeout de 5 min às 09h de 23/11</td></tr>
+      <tr><td>Reputação</td><td>1 / 2</td><td><span class="pill p-teste">teste</span></td><td>Avaliações sem envio</td></tr>
+      <tr><td>Manutenção</td><td>4 / 4</td><td><span class="pill p-teste">teste</span> <span class="pill p-alerta">não apto</span></td><td>Modo real devolvido pelo auditor</td></tr>
+      <tr><td>Fornecedores</td><td>1 / 5</td><td><span class="pill p-sombra">sombra</span></td><td>Só Prestadores, sem fonte de dados</td></tr>
+      <tr><td>Contas</td><td>0 / 5</td><td><span class="pill p-nao">não instalado</span></td><td>Previsto no real de terça</td></tr>
+    </tbody>
+  </table>
+  <div class="footer-mark">Fontes: agenda da VPS do time, consultado 23/11/2026 · memória do projeto 20–23/11</div>
+  <div class="notes">
+    <p>Foto de hoje cedo. Conformidade e Danos completos em sombra; Manutenção instalada, mas não apta ao real às 03h de 23/11.</p>
+    <p>Contas está entre os pods do real de terça sem agente instalado: só entra quando houver agente.</p>
+  </div>
+</section>
+
+<!-- 9 · A SEMANA -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>A semana</h2>
+  <table class="t">
+    <thead><tr><th>Quando</th><th>O que acontece</th></tr></thead>
+    <tbody>
+      <tr><td>Seg 23/11</td><td><strong>Dia de sombra.</strong> Corrigir sugestões no <code>/trabalho-em-dupla</code> e fechar às 17h.</td></tr>
+      <tr><td>Ter 24/11</td><td><strong>Rotina real</strong> em Reputação, Conformidade, Danos e Contas, agente por agente, com ordem da Ray. Manutenção só com os agentes aptos.</td></tr>
+      <tr><td>Todo dia 17h</td><td><strong>Janela de melhorias:</strong> o que passar nos testes sobe à VPS, com rollback automático.</td></tr>
+      <tr><td>25/11</td><td>Entrada prevista do agente de Reclame Aqui da Diretoria</td></tr>
+    </tbody>
+  </table>
+  <div class="footer-mark">Fontes: memória do projeto 19–23/11 · pods-v3.json · agenda da VPS do time, 23/11/2026</div>
+  <div class="notes">
+    <p>Na terça nada liga em bloco. O que travar se corrige no mesmo dia.</p>
+    <p>A pré-checagem de Manutenção às 06h30 tem script na VPS, mas não está agendada em 23/11.</p>
+  </div>
+</section>
+
+<!-- 10 · PEDIDO + PENDÊNCIAS -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <h2>O que pedimos de vocês e o que ainda falta</h2>
+  <div class="col-2">
+    <div class="card">
+      <h4>No dia a dia</h4>
+      <ul>
+        <li><strong>Corrija o agente</strong> no <code>/trabalho-em-dupla</code>; não refaça o trabalho dele.</li>
+        <li><strong>Zere a sua fila</strong> no horário do ritual.</li>
+        <li><strong>Revise as 24h de sombra</strong> dos agentes do seu pod.</li>
+        <li><strong>Feche o dia às 17h.</strong></li>
+        <li><strong>Quinta:</strong> qualidade com os conferentes.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Pendências</h4>
+      <ul>
+        <li>Teto de valor por agente: a decidir</li>
+        <li>Último dia do dano (14/12 ou 15/12): a confirmar</li>
+        <li>Chave de escrita no Sapron: analista do pod Manutenção</li>
+        <li><code>ota_base.json</code>: analista do pod Danos</li>
+        <li>Credenciais de serviço: Sapron, Nekt, kpi-system, ScorePulse, UTI</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-mark">Fontes: pods-v3.json (21/11/2026, atualizado 22/11) · pedido de credenciais de serviço (22/11/2026) · memória do projeto 22–23/11</div>
+  <div class="notes">
+    <p>Se o agente errou, corrija na dupla em vez de fazer no lugar dele: só assim o erro deixa de se repetir.</p>
+    <p>Manutenção tem 112 padrões provisórios de régua sem MGO aguardando a Supervisora. Bloqueio que aparecer vira card; nada de contornar com login pessoal.</p>
+  </div>
+</section>
+
+
+<div class="draft">Rascunho · números não conferidos pelo auditor</div>
+<div class="counter" id="counter"></div>
+<div class="hint" id="hint">Setas para navegar · N mostra as notas · F tela cheia</div>
+<div id="notes-panel"><div class="lbl">Notas do apresentador</div><div id="notes-body"></div></div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+let current = 0;
+const counter = document.getElementById('counter');
+const hint = document.getElementById('hint');
+const panel = document.getElementById('notes-panel');
+const notesBody = document.getElementById('notes-body');
+
+function show(i) {
+  slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(slides.length - 1, i));
+  slides[current].classList.add('active');
+  counter.textContent = (current + 1) + ' / ' + slides.length;
+  const n = slides[current].querySelector('.notes');
+  notesBody.innerHTML = n ? n.innerHTML : '';
+}
+show(0);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') show(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(current - 1);
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+  if (e.key === 'n' || e.key === 'N') panel.classList.toggle('open');
+  if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+document.addEventListener('click', e => {
+  if (panel.contains(e.target)) return;
+  if (e.clientX > window.innerWidth * 0.25) show(current + 1);
+  else show(current - 1);
+});
+setTimeout(() => { hint.style.opacity = '0'; }, 5000);
+</script>
+</body>
+</html>
